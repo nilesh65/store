@@ -101,6 +101,14 @@ export const checkoutSuccess = async (req, res) => {
 
       await newOrder.save();
 
+      // clear the user's cart
+      const User = (await import("../models/user.model.js")).default; // import User model
+      const user = await User.findById(session.metadata.userId);
+      if (user) {
+        user.cartItems = []; // empty the cart
+        await user.save();
+      }
+
       // Create new coupon **after successful payment**
       if (session.amount_total >= 20000) {
         await createNewCoupon(session.metadata.userId);
@@ -108,7 +116,7 @@ export const checkoutSuccess = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        message: "Payment successful, order created, and coupon deactivated if used.",
+        message: "Payment successful, order created, coupon deactivated if used, cart cleared.",
         orderId: newOrder._id,
       });
     } else {
